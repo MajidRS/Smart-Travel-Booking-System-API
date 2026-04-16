@@ -5,6 +5,10 @@ import morgan from 'morgan'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import AppError from './utils/appError.js'
+import globalErrorHandler from './controllers/errorController.js'
+import tourRouter from './routes/tourRoute.js'
+
 const fileName = fileURLToPath(import.meta.url)
 const dirName = path.dirname(fileName)
 const staticFilePath = path.join(dirName, 'public')
@@ -19,5 +23,17 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(express.static(staticFilePath))
+
+app.use('/api/v1/tours', tourRouter)
+
+app.all(/.*/, (req, res, next) => {
+  const error = new AppError(
+    `Can't find this ${req.originalUrl} on this server`,
+    404
+  )
+  next(error)
+})
+
+app.use(globalErrorHandler)
 
 export default app
