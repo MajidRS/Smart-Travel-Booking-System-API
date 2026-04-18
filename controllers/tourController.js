@@ -1,6 +1,13 @@
 import Tour from '../models/tourModel.js'
+import AppError from '../utils/appError.js'
 import catchAsync from '../utils/catchAsync.js'
 import * as factory from './factoryController.js'
+
+const getAllTours = factory.getAll(Tour)
+const getTour = factory.getOne(Tour)
+const createTour = factory.createOne(Tour)
+const updateTour = factory.updateOne(Tour)
+const deleteTour = factory.deleteOne(Tour)
 
 const aliasTopTours = (req, res, next) => {
   const aliasQuery = {}
@@ -10,12 +17,6 @@ const aliasTopTours = (req, res, next) => {
   aliasQuery.fields = 'name,ratingsAverage,price,duration,difficulty'
   next()
 }
-
-const getAllTours = factory.getAll(Tour)
-const getTour = factory.getOne(Tour)
-const createTour = factory.createOne(Tour)
-const updateTour = factory.updateOne(Tour)
-const deleteTour = factory.deleteOne(Tour)
 
 const getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
@@ -40,8 +41,7 @@ const getTourStats = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      source: 'Tour',
-      stats
+      data: stats
     }
   })
 })
@@ -89,8 +89,73 @@ const getMonthlyPlan = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      source: 'Tour',
-      plan
+      data: plan
+    }
+  })
+})
+
+const getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latitudeLongitude, unit } = req.params
+  const [latitude, longitude] = latitudeLongitude.split(',')
+  if (!latitude || !longitude) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format latitude,longitude',
+        400
+      )
+    )
+  }
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1
+  const tours = await Tour.find({
+    startLocation: {
+      $geoWithin: { $centerSphere: [[longitude, latitude], radius] }
+    }
+  })
+  res.status(200).json({
+    status: 'success',
+    result: tours.length,
+    data: {
+      data: tours
+    }
+  })
+})
+
+const getDistances = catchAsync(async (req, res, next) => {
+  const { latitudeLongitude, unit } = req.params
+  const [latitude, longitude] = latitudeLongitude.split(',')
+
+  if (!latitude || !longitude) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format latitude,longitude',
+        400
+      )
+    )
+  }
+
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [longitude * 1, latitude * 1]
+        },
+        distanceField: 'distance',
+        distanceMultiplier: multiplier
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        distance: 1
+      }
+    }
+  ])
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: distances
     }
   })
 })
@@ -103,5 +168,7 @@ export {
   deleteTour,
   aliasTopTours,
   getTourStats,
-  getMonthlyPlan
+  getMonthlyPlan,
+  getToursWithin,
+  getDistances
 }
