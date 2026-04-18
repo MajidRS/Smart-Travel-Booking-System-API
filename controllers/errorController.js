@@ -1,22 +1,30 @@
 import AppError from '../utils/appError.js'
 
-const handelCastErrorDB = (error) => {
+const handleCastErrorDB = (error) => {
   return new AppError(`Invalid ${error.path}: ${error.value}`, 400)
 }
 
-const handelDuplicateFieldsErrorDB = (error) => {
+const handleDuplicateFieldsErrorDB = (error) => {
   const fieldName = error.errorResponse.errmsg.match(/"([^"]*)"/g)[0]
   return new AppError(
-    `Duplicate filed value ${fieldName}.Please use another value`,
+    `Duplicate field value ${fieldName}.Please use another value`,
     400
   )
 }
 
-const handelValidationErrorDB = (error) => {
+const handleValidationErrorDB = (error) => {
   const message = Object.values(error.errors)
     .map((ele) => ele.message)
     .join('. ')
   return new AppError(`${message}`, 400)
+}
+
+const handleJsonWebTokenError = () => {
+  return new AppError('Invalid token. Please log in again', 401)
+}
+
+const handleTokenExpiredError = () => {
+  return new AppError('Your session has expired. Please log in again', 401)
 }
 
 const sendErrorDev = (err, res) => {
@@ -49,11 +57,12 @@ const globalErrorHandler = (err, req, res, next) => {
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res)
   } else if (process.env.NODE_ENV === 'production') {
-    let error
-    if (err.name === 'CastError') error = handelCastErrorDB(err)
-    if (err.code === 11000) error = handelDuplicateFieldsErrorDB(err)
-    if (err.name === 'ValidationError') error = handelValidationErrorDB(err)
-    error = Object.keys(error).length === 0 ? err : error
+    let error = err
+    if (err.name === 'CastError') error = handleCastErrorDB(err)
+    if (err.code === 11000) error = handleDuplicateFieldsErrorDB(err)
+    if (err.name === 'ValidationError') error = handleValidationErrorDB(err)
+    if (err.name === 'JsonWebTokenError') error = handleJsonWebTokenError()
+    if (err.name === 'TokenExpiredError') error = handleTokenExpiredError()
     sendErrorProd(error, res)
   }
 }
