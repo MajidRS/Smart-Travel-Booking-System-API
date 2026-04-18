@@ -112,7 +112,6 @@ const forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.generatePasswordResetToken()
   await user.save({ validateBeforeSave: false })
 
-  //   const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`
   const resetUrl = `${process.env.RESET_URL}/${resetToken}`
 
   const message = `Hello ${user.name || 'User'}, You requested to reset your password.
