@@ -38,7 +38,8 @@ const tourSchema = new mongoose.Schema(
       type: Number,
       default: 4.5,
       min: [1, 'Rating must be above 1.0'],
-      max: [5, 'Rating must be below 5.0']
+      max: [5, 'Rating must be below 5.0'],
+      set: (val) => Math.round(val * 10) / 10
     },
     ratingsQuantity: {
       type: Number,
@@ -75,11 +76,39 @@ const tourSchema = new mongoose.Schema(
       type: [Date],
       required: [true, 'A tour must be have a startDates']
     },
+    startLocation: {
+      type: {
+        type: 'String',
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: [Number],
+      address: String,
+      description: String
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          enum: ['Point'],
+          default: 'Point'
+        },
+        coordinates: [Number],
+        description: String,
+        day: Number
+      }
+    ],
     createdAt: {
       type: Date,
       default: Date.now,
       select: false
-    }
+    },
+    guides: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ]
   },
   {
     toJSON: { virtuals: true },
@@ -88,13 +117,18 @@ const tourSchema = new mongoose.Schema(
 )
 
 tourSchema.index({ price: 1, ratingsAverage: -1 })
-
 tourSchema.index({ slug: 1 })
-
 tourSchema.index({ startLocation: '2dsphere' })
 
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7
+})
+
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id',
+  options: { tourIdOnly: true }
 })
 
 tourSchema.pre('save', function () {
@@ -104,6 +138,15 @@ tourSchema.pre('save', function () {
 tourSchema.pre(/^find/, function () {
   this.find({ secretTour: { $ne: true } })
   this.start = Date.now()
+})
+
+tourSchema.pre(/^find/, function () {
+  if (!this.getOptions().skipGuides) {
+    this.populate({
+      path: 'guides',
+      select: '-__v -passwordChangedAt'
+    })
+  }
 })
 
 tourSchema.post(/^find/, function () {
