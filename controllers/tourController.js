@@ -4,7 +4,7 @@ import catchAsync from '../utils/catchAsync.js'
 import * as factory from './factoryController.js'
 
 const getAllTours = factory.getAll(Tour)
-const getTour = factory.getOne(Tour)
+const getTour = factory.getOne(Tour, { path: 'reviews' })
 const createTour = factory.createOne(Tour)
 const updateTour = factory.updateOne(Tour)
 const deleteTour = factory.deleteOne(Tour)
@@ -110,7 +110,7 @@ const getToursWithin = catchAsync(async (req, res, next) => {
     startLocation: {
       $geoWithin: { $centerSphere: [[longitude, latitude], radius] }
     }
-  })
+  }).select('name')
   res.status(200).json({
     status: 'success',
     result: tours.length,
