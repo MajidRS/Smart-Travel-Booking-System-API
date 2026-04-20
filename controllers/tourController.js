@@ -96,7 +96,9 @@ const getMonthlyPlan = catchAsync(async (req, res, next) => {
 
 const getToursWithin = catchAsync(async (req, res, next) => {
   const { distance, latitudeLongitude, unit } = req.params
-  const [latitude, longitude] = latitudeLongitude.split(',')
+  let [latitude, longitude] = latitudeLongitude.split(',')
+  latitude = parseFloat(latitude)
+  longitude = parseFloat(longitude)
   if (!latitude || !longitude) {
     return next(
       new AppError(
