@@ -7,6 +7,7 @@ import morgan from 'morgan'
 import qs from 'qs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import cookieParser from 'cookie-parser'
 
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
@@ -19,14 +20,50 @@ import globalErrorHandler from './controllers/errorController.js'
 import tourRouter from './routes/tourRoute.js'
 import userRouter from './routes/userRoute.js'
 import reviewRouter from './routes/reviewRoute.js'
+import viewRouter from './routes/viewRoute.js'
 
 const fileName = fileURLToPath(import.meta.url)
 const dirName = path.dirname(fileName)
 const staticFilePath = path.join(dirName, 'public')
+const viewsFilePath = path.join(dirName, 'views')
 
 const app = express()
 
+app.use(express.static(staticFilePath))
+
+app.set('view engine', 'pug')
+app.set('views', viewsFilePath)
+
 app.use(helmet())
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        'https://cdn.jsdelivr.net',
+        'https://api.mapbox.com',
+        'blob:'
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'https://api.mapbox.com',
+        'https://fonts.googleapis.com'
+      ],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      workerSrc: ["'self'", 'blob:'],
+      connectSrc: [
+        "'self'",
+        'http://localhost:3000',
+        'https://api.mapbox.com',
+        'https://events.mapbox.com'
+      ],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://api.mapbox.com']
+    }
+  })
+)
 
 const limiter = rateLimit({
   limit: 100,
@@ -40,7 +77,8 @@ const limiter = rateLimit({
 app.use(limiter)
 
 app.use(express.json({ limit: '10kb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+app.use(cookieParser())
 
 app.use(
   mongoSanitize({
@@ -63,8 +101,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
 
-app.use(express.static(staticFilePath))
-
+app.use('/', viewRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)
