@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
-    "build": "esbuild ./public/js/index.js --bundle --minify --sourcemap --outfile=./public/js/bundel.js",
-    "watch": "esbuild ./public/js/index.js --bundle --sourcemap --outfile=./public/js/bundel.js --watch"
+    "build": "esbuild ./public/js/index.js --bundle --minify --sourcemap --outfile=./public/js/bundle.js",
+    "watch": "esbuild ./public/js/index.js --bundle --sourcemap --outfile=./public/js/bundle.js --watch"
   },
   "keywords": [],
   "author": "",
