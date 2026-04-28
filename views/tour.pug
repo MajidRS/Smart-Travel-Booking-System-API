@@ -17,7 +17,6 @@ mixin reviewCard(review)
         svg.reviews__star(class=`reviews__star--${review.rating >= i? 'active': 'inactive'}`)
           use(xlink:href='/img/icons.svg#icon-star')
 
-
 mixin overviewCard(icon, label, text)
   .overview-box__detail
     svg.overview-box__icon
