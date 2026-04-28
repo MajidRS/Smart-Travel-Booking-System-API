@@ -40,9 +40,7 @@ if (userDataForm) {
 }
 
 if (userPasswordForm) {
-  console.log('first')
   userPasswordForm.addEventListener('submit', async (e) => {
-    console.log('seconde')
     e.preventDefault()
     document.querySelector('.btn--save-password').textContent = 'Updating...'
     const currentPassword = document.getElementById('password-current').value
