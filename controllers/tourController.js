@@ -1,3 +1,6 @@
+import multer from 'multer'
+import sharp from 'sharp'
+import { randomUUID } from 'crypto'
 import Tour from '../models/tourModel.js'
 import AppError from '../utils/appError.js'
 import catchAsync from '../utils/catchAsync.js'
@@ -8,6 +11,47 @@ const getTour = factory.getOne(Tour, { path: 'reviews' })
 const createTour = factory.createOne(Tour)
 const updateTour = factory.updateOne(Tour)
 const deleteTour = factory.deleteOne(Tour)
+
+const storage = multer.memoryStorage()
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|png|jpg|webp|gif/
+    const isValid =
+      allowed.test(file.mimetype) &&
+      allowed.test(file.originalname.split('.')[1].toLowerCase())
+    isValid ? cb(null, true) : cb(new AppError('Images only!', 400), false)
+  }
+})
+
+const uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 }
+])
+
+const resizeTourImages = catchAsync(async (req, res, next) => {
+  if (!req.files.imageCover || !req.files.images) return next()
+  req.body.imageCover = `tour-${req.params.id}-${randomUUID()}-cover.jpeg`
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 100 })
+    .toFile(`public/img/tours/${req.body.imageCover}`)
+  req.body.images = []
+  await Promise.all(
+    req.files.images.map(async (file, index) => {
+      const imageFileName = `tour-${req.params.id}-${randomUUID()}-${index + 1}.jpeg`
+      await sharp(file.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 100 })
+        .toFile(`public/img/tours/${imageFileName}`)
+      req.body.images.push(imageFileName)
+    })
+  )
+  next()
+})
 
 const aliasTopTours = (req, res, next) => {
   const aliasQuery = {}
@@ -167,6 +211,8 @@ export {
   getTour,
   createTour,
   updateTour,
+  uploadTourImages,
+  resizeTourImages,
   deleteTour,
   aliasTopTours,
   getTourStats,
