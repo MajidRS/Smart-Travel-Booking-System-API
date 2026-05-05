@@ -52,7 +52,8 @@ class Email {
       html,
       text: htmlToText(html)
     }
-
+    console.log('Sending email to:', this.to);
+    console.log('Transport ready:', this.newTransport());
     await this.newTransport().sendMail(mailOptions)
   }
 
