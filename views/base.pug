@@ -8,6 +8,7 @@ html
       link(rel='stylesheet' href='/css/style.css')
       link(rel='shortcut icon' type='image/png' href='/img/favicon.png')
       title= `Natours | ${title}`
+      script(src="https://js.stripe.com/v3/")
 
   body
     // HEADER
@@ -18,5 +19,4 @@ html
 
     // FOOTER
     include _footer
-
     script(src='/js/bundle.js')
