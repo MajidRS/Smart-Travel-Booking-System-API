@@ -15,12 +15,15 @@ import hpp from 'hpp'
 import xssSanitize from 'xss-sanitize'
 import mongoSanitize from '@exortek/express-mongo-sanitize'
 
+import compression from 'compression'
+
 import AppError from './utils/appError.js'
 import globalErrorHandler from './controllers/errorController.js'
 import tourRouter from './routes/tourRoute.js'
 import userRouter from './routes/userRoute.js'
 import reviewRouter from './routes/reviewRoute.js'
 import viewRouter from './routes/viewRoute.js'
+import bookingRouter from './routes/bookingRoute.js'
 
 const fileName = fileURLToPath(import.meta.url)
 const dirName = path.dirname(fileName)
@@ -44,6 +47,7 @@ app.use(
         "'self'",
         'https://cdn.jsdelivr.net',
         'https://api.mapbox.com',
+        'https://js.stripe.com',
         'blob:'
       ],
       styleSrc: [
@@ -58,8 +62,11 @@ app.use(
         "'self'",
         'http://localhost:3000',
         'https://api.mapbox.com',
-        'https://events.mapbox.com'
+        'https://events.mapbox.com',
+        'https://api.stripe.com',
+        'https://checkout.stripe.com'
       ],
+      frameSrc: ['https://js.stripe.com', 'https://checkout.stripe.com'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https://api.mapbox.com']
     }
   })
@@ -97,6 +104,8 @@ app.set('query parser', (str) => {
   })
 })
 
+app.use(compression())
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
@@ -105,6 +114,7 @@ app.use('/', viewRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)
+app.use('/api/v1/bookings', bookingRouter)
 
 app.all(/.*/, (req, res, next) => {
   const error = new AppError(
