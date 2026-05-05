@@ -39,13 +39,8 @@ const signup = catchAsync(async (req, res, next) => {
   try {
     const url = `${req.protocol}://${req.get('host')}/me`
     await new Email(newUser, url).sendWelcome()
-  } catch (error) {
-    return next(
-      new AppError(
-        'There was an error sending the email. Try again later.',
-        500
-      )
-    )
+  } catch (err) {
+    console.log('EMAIL ERROR 💥:', err.message)
   }
   createSendToken(newUser, 201, res)
 })
