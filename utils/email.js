@@ -54,7 +54,8 @@ class Email {
     }
     console.log('Sending email to:', this.to);
     console.log('Transport ready:', this.newTransport());
-    await this.newTransport().sendMail(mailOptions)
+    const result = await this.newTransport().sendMail(mailOptions);
+    console.log('EMAIL RESULT:', result);
   }
 
   async sendWelcome() {
