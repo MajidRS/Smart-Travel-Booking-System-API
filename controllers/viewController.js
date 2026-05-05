@@ -33,6 +33,11 @@ const getLogin = (req, res) => {
     title: 'Login into your account'
   })
 }
+const getSignup = (req, res) => {
+  res.status(200).render('signup', {
+    title: 'Create your account'
+  })
+}
 
 const getAccount = async (req, res) => {
   res.status(200).render('account', {
@@ -50,4 +55,4 @@ const getMyTours = catchAsync(async (req, res) => {
   })
 })
 
-export { getOverview, getTour, getLogin, getAccount, getMyTours }
+export { getOverview, getTour, getLogin, getSignup, getAccount, getMyTours }
