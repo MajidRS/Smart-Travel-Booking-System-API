@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import User from '../models/userModel.js'
 import catchAsync from '../utils/catchAsync.js'
 import AppError from '../utils/appError.js'
-import sendEmail from '../utils/email.js'
+import Email from '../utils/email.js'
 
 const createSendToken = (user, statusCode, res) => {
   const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
@@ -17,11 +17,9 @@ const createSendToken = (user, statusCode, res) => {
     httpOnly: true,
     sameSite: 'strict'
   }
-
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
-
   res.cookie('jwt', token, cookieOptions)
-
+  user.password = undefined
   res.status(statusCode).json({
     status: 'success',
     data: {
@@ -38,7 +36,8 @@ const signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm
   })
-  newUser.password = undefined
+  const url = `${req.protocol}://${req.get('host')}/me`
+  await new Email(newUser, url).sendWelcome()
   createSendToken(newUser, 201, res)
 })
 
@@ -145,24 +144,9 @@ const forgotPassword = catchAsync(async (req, res, next) => {
   }
   const resetToken = user.generatePasswordResetToken()
   await user.save({ validateBeforeSave: false })
-
-  const resetUrl = `${process.env.RESET_URL}/${resetToken}`
-
-  const message = `Hello ${user.name || 'User'}, You requested to reset your password.
-  Please click the link below to set a new password:
-  Reset Password Link: ${resetUrl}
-  This link is valid for 10 minutes. If you did not request a password reset, please ignore this email.
-  Thank you,
-  Your App Team `
-
-  const mailOptions = {
-    to: user.email,
-    subject: 'Password Reset Request',
-    message
-  }
-
   try {
-    await sendEmail(mailOptions)
+    const resetUrl = `${process.env.RESET_URL}/${resetToken}`
+    await new Email(user, resetUrl).sendPasswordReset()
     res.status(200).json({
       status: 'success',
       message: 'resetToken sent to email'
