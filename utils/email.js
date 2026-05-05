@@ -44,18 +44,32 @@ class Email {
         subject
       }
     )
+try {
+    console.log('STEP 1: before transport');
+
+    const transport = this.newTransport();
+
+    console.log('STEP 2: transport created');
 
     const mailOptions = {
       from: this.from,
       to: this.to,
       subject,
-      html,
-      text: htmlToText(html)
-    }
-    console.log('Sending email to:', this.to);
-    console.log('Transport ready:', this.newTransport());
-    const result = await this.newTransport().sendMail(mailOptions);
-    console.log('EMAIL RESULT:', result);
+      text: 'test',
+      html: '<h1>test</h1>'
+    };
+
+    console.log('STEP 3: before sendMail');
+
+    const result = await transport.sendMail(mailOptions);
+
+    console.log('EMAIL SENT RESULT:', result);
+
+    return result;
+  } catch (err) {
+    console.log('EMAIL ERROR CAUGHT:', err);
+    throw err;
+  }
   }
 
   async sendWelcome() {
