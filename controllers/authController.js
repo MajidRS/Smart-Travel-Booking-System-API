@@ -36,17 +36,17 @@ const signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm
   })
-  //try {
-    //const url = `${req.protocol}://${req.get('host')}/me`
-    //await new Email(newUser, url).sendWelcome()
-  //} catch (error) {
-    //return next(
-      //new AppError(
-        //'There was an error sending the email. Try again later.',
-        //500
-      //)
-    //)
-  //}
+  try {
+    const url = `${req.protocol}://${req.get('host')}/me`
+    await new Email(newUser, url).sendWelcome()
+  } catch (error) {
+    return next(
+      new AppError(
+        'There was an error sending the email. Try again later.',
+        500
+      )
+    )
+  }
   createSendToken(newUser, 201, res)
 })
 
