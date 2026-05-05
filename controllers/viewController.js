@@ -1,6 +1,7 @@
 import { configDotenv } from 'dotenv'
 configDotenv({ path: './config.env' })
 import Tour from '../models/tourModel.js'
+import Booking from '../models/bookingModel.js'
 import catchAsync from '../utils/catchAsync.js'
 import AppError from '../utils/appError.js'
 
@@ -39,4 +40,14 @@ const getAccount = async (req, res) => {
   })
 }
 
-export { getOverview, getTour, getLogin, getAccount }
+const getMyTours = catchAsync(async (req, res) => {
+  const bookings = await Booking.find({ user: req.user.id })
+  const tourIds = bookings.map((booking) => booking.tour)
+  const tours = await Tour.find({ _id: { $in: tourIds } })
+  res.status(200).render('overview', {
+    title: 'My Tours',
+    tours
+  })
+})
+
+export { getOverview, getTour, getLogin, getAccount, getMyTours }
