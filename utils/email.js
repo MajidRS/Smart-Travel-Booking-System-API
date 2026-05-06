@@ -1,9 +1,11 @@
 import nodemailer from 'nodemailer'
+import sgMail from '@sendgrid/mail'
 import pug from 'pug'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import { htmlToText } from 'html-to-text'
 
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const fileName = fileURLToPath(import.meta.url)
 const dirName = path.dirname(fileName)
 class Email {
@@ -15,16 +17,6 @@ class Email {
   }
 
   newTransport() {
-    if (process.env.NODE_ENV === 'production') {
-      return nodemailer.createTransport({
-        host: 'smtp.sendgrid.net',
-        port: 587,
-        auth: {
-          user: process.env.SENDGRID_USERNAME,
-          pass: process.env.SENDGRID_PASSWORD
-        }
-      })
-    }
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
@@ -44,32 +36,18 @@ class Email {
         subject
       }
     )
-try {
-    console.log('STEP 1: before transport');
-
-    const transport = this.newTransport();
-
-    console.log('STEP 2: transport created');
-
     const mailOptions = {
       from: this.from,
       to: this.to,
       subject,
-      text: 'test',
-      html: '<h1>test</h1>'
-    };
-
-    console.log('STEP 3: before sendMail');
-
-    const result = await transport.sendMail(mailOptions);
-
-    console.log('EMAIL SENT RESULT:', result);
-
-    return result;
-  } catch (err) {
-    console.log('EMAIL ERROR CAUGHT:', err);
-    throw err;
-  }
+      html,
+      text: htmlToText(html)
+    }
+    if (process.env.NODE_ENV === 'production') {
+      await sgMail.send(mailOptions)
+    } else {
+      await this.newTransport().sendMail(mailOptions)
+    }
   }
 
   async sendWelcome() {
