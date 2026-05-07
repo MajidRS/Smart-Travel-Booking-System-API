@@ -8,6 +8,7 @@ import qs from 'qs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
@@ -33,6 +34,8 @@ const viewsFilePath = path.join(dirName, 'views')
 const app = express()
 
 app.use(express.static(staticFilePath))
+app.use(cors())
+app.options('*', cors())
 
 app.set('trust proxy', 1)
 app.set('view engine', 'pug')
