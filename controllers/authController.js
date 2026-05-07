@@ -6,19 +6,18 @@ import catchAsync from '../utils/catchAsync.js'
 import AppError from '../utils/appError.js'
 import Email from '../utils/email.js'
 
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = (user, statusCode, req, res) => {
   const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   })
-  const cookieOptions = {
+  res.cookie('jwt', token, {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
-    sameSite: 'strict'
-  }
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
-  res.cookie('jwt', token, cookieOptions)
+    sameSite: 'strict',
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+  })
   user.password = undefined
   res.status(statusCode).json({
     status: 'success',
@@ -38,7 +37,7 @@ const signup = catchAsync(async (req, res, next) => {
   })
   const url = `${req.protocol}://${req.get('host')}/me`
   await new Email(newUser, url).sendWelcome()
-  createSendToken(newUser, 201, res)
+  createSendToken(newUser, 201, req, res)
 })
 
 const login = catchAsync(async (req, res, next) => {
@@ -53,7 +52,7 @@ const login = catchAsync(async (req, res, next) => {
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Invalid email or password', 401))
   }
-  createSendToken(user, 200, res)
+  createSendToken(user, 200, req, res)
 })
 
 const logout = (req, res) => {
@@ -183,7 +182,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetToken = undefined
   user.passwordResetExpires = undefined
   await user.save()
-  createSendToken(user, 200, res)
+  createSendToken(user, 200, req, res)
 })
 
 const updatePassword = catchAsync(async (req, res, next) => {
@@ -194,7 +193,7 @@ const updatePassword = catchAsync(async (req, res, next) => {
   user.password = req.body.password
   user.passwordConfirm = req.body.passwordConfirm
   await user.save()
-  createSendToken(user, 200, res)
+  createSendToken(user, 200, req, res)
 })
 
 export {
