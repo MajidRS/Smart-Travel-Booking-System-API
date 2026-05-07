@@ -34,6 +34,7 @@ const app = express()
 
 app.use(express.static(staticFilePath))
 
+app.set('trust proxy', 1)
 app.set('view engine', 'pug')
 app.set('views', viewsFilePath)
 
