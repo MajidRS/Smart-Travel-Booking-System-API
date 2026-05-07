@@ -35,7 +35,6 @@ const app = express()
 
 app.use(express.static(staticFilePath))
 app.use(cors())
-app.options('*', cors())
 
 app.set('trust proxy', 1)
 app.set('view engine', 'pug')
