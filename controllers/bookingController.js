@@ -23,7 +23,7 @@ const getCheckoutSession = catchAsync(async (req, res, next) => {
             name: `${tour.name} Tour`,
             description: tour.summary,
             images: [
-              `${req.protocol}://${req.get('host')}/img/tours/${tour.imageCover}.jpg`
+              `${req.protocol}://${req.get('host')}/img/tours/${tour.imageCover}`
             ]
           },
           unit_amount: tour.price * 100,
@@ -44,7 +44,7 @@ const createBookingCheckout = catchAsync(async (session) => {
   const tour = session.client_reference_id
   const user = await User.findOne({ email: session.customer_email }).id
   const price = session.line_items[0].price_data.unit_amount / 100
-  const booking = await Booking.create({ tour, user, price })
+  await Booking.create({ tour, user, price })
 })
 
 const webhookCheckout = (req, res, next) => {
