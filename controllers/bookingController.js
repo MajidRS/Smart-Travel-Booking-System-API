@@ -14,7 +14,11 @@ const getCheckoutSession = catchAsync(async (req, res, next) => {
     success_url: `${req.protocol}://${req.get('host')}/my-tours/?alert=booking`,
     cancel_url: `${req.protocol}://${req.get('host')}/tour/${tour.slug}?alert=booking`,
     customer_email: req.user.email,
-    client_reference_id: req.params.tourId,
+    metadata: {
+      tourId: tour.id,
+      userId: req.user.id,
+      price: tour.price
+    },
     mode: 'payment',
     line_items: [
       {
@@ -40,14 +44,20 @@ const getCheckoutSession = catchAsync(async (req, res, next) => {
   })
 })
 
-const createBookingCheckout = catchAsync(async (session) => {
-  const tour = session.client_reference_id
-  const user = await User.findOne({ email: session.customer_email }).id
-  const price = session.line_items[0].price_data.unit_amount / 100
-  await Booking.create({ tour, user, price })
-})
+const createBookingCheckout = async (session) => {
+  try {
+    const { tourId, userId, price } = session.metadata
+    await Booking.create({
+      tour: tourId,
+      user: userId,
+      price
+    })
+  } catch (err) {
+    console.log('Booking creation error:', err.message)
+  }
+}
 
-const webhookCheckout = (req, res, next) => {
+const webhookCheckout = async (req, res, next) => {
   const signature = req.headers['stripe-signature']
   let event
   try {
@@ -57,10 +67,10 @@ const webhookCheckout = (req, res, next) => {
       process.env.STRIPE_WEBHOOK_SECRET
     )
   } catch (error) {
-    res.status(400).send(`webhook error:${error.message}`)
+    return res.status(400).send(`webhook error:${error.message}`)
   }
   if (event.type === 'checkout.session.completed') {
-    createBookingCheckout(event.data.object)
+    await createBookingCheckout(event.data.object)
   }
   res.status(200).json({ received: true })
 }
