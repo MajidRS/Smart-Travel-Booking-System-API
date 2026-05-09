@@ -20,6 +20,7 @@ import compression from 'compression'
 
 import AppError from './utils/appError.js'
 import globalErrorHandler from './controllers/errorController.js'
+import * as bookingController from './controllers/bookingController.js'
 import tourRouter from './routes/tourRoute.js'
 import userRouter from './routes/userRoute.js'
 import reviewRouter from './routes/reviewRoute.js'
@@ -85,6 +86,11 @@ const limiter = rateLimit({
 })
 
 app.use('/api', limiter)
+app.use(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }),
+  bookingController.webhookCheckout
+)
 
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
