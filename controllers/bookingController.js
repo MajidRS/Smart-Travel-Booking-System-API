@@ -1,6 +1,5 @@
 import Stripe from 'stripe'
 import Tour from '../models/tourModel.js'
-import User from '../models/userModel.js'
 import Booking from '../models/bookingModel.js'
 import catchAsync from '../utils/catchAsync.js'
 import * as factory from '../controllers/factoryController.js'
